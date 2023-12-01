@@ -26,37 +26,21 @@ def normal_score(x, mu, sigma):
     return -(x-mu)/sigma**2
 
 
-parser = argparse.ArgumentParser(
-    description="Run semiparametric sim using setup file provided",
-    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-
-parser.add_argument("-i", "--index", type=int,
-                    help="row index in the setup data frame to use for the simulation", required=True)
-parser.add_argument("-p", "--path", type=str,
-                    help="path of the setup file", required=True)
-args = vars(parser.parse_args())
-
-setup_path = args.pop("path")
-name = pathlib.Path(setup_path).stem
-i = int(args["index"])
 
 
-sim_setting = pd.read_pickle(setup_path).iloc[i]
 
-
-n = sim_setting["n"]
-p = sim_setting["p"]
-rep = sim_setting["rep"]
-Y_regression = sim_setting["Y_regression"]
-typ = sim_setting["type"]
-seed = sim_setting["seed"]
-estimator = sim_setting["estimator"]
+n = 250 # one of [250, 1000, 4000]
+d = 3 # one of [3, 15, 75]
+Y_regression = "nonparametric" # one of ["partially_linear", "nonparametric"]
+typ = "binary" # one of ["binary", "continuous"] (continuous corresponds to directional effects)
+seed = 11233 # the seed was set differently for each repetition of the experiment in the paper
+estimator =  "PLM" # one of ["NPM", "NPM_no_x", "NPM_oracle", "plugin", "plugin_no_x", "PLM", "PLM_no_x"]
 
 rng = np.random.RandomState(seed)
 
 ## Simulate data
-median = beta.ppf(0.5, 1, p-2)
-W = rng.dirichlet(np.ones(p-1), n)
+median = beta.ppf(0.5, 1, d-2)
+W = rng.dirichlet(np.ones(d-1), n)
 if typ == "continuous":
     xi = rng.normal(0, 1, size=n)
     if Y_regression == "partially_linear":
@@ -73,9 +57,9 @@ elif typ == "binary":
     true_score = lambda W:  p_W_1*(W[:,0] > median)+p_W_0*(W[:,0] <= median)
     L = rng.binomial(1, p_W_1, n)*(W[:,0] > median)+rng.binomial(1, p_W_0, n)*(W[:,0] <= median)
     if Y_regression == "nonparametric":
-        Y = (1+(1-p_W_0)/(1-p_W_1))*(W[:, 0] > median)*L + W[:, 0]/np.sqrt(beta.var(1, p-2)) + rng.normal(0, 1, n)
+        Y = (1+(1-p_W_0)/(1-p_W_1))*(W[:, 0] > median)*L + W[:, 0]/np.sqrt(beta.var(1, d-2)) + rng.normal(0, 1, n)
     elif Y_regression == "partially_linear":
-        Y = L + W[:, 0]/np.sqrt(beta.var(1, p-2))+ rng.normal(0, 1, n)
+        Y = L + W[:, 0]/np.sqrt(beta.var(1, d-2))+ rng.normal(0, 1, n)
 
 ## Setup regressions
 regression_estimators = (("dummy", DummyRegressor()), ("simple_rf", RandomForestRegressor(500, max_features=None, max_depth=2, oob_score=True, random_state=rng, n_jobs=-1)),  ("adv_rf",  RandomForestRegressor(500, oob_score=True, max_features=None, random_state=rng, n_jobs=-1)))
@@ -92,31 +76,31 @@ elif typ == "binary":
 
 
 ## Compute estimates
-if estimator == "partially_linear":
-    sim_setting["result"] = semi_est.partially_linear_model(Y, L, W, Y_on_LW, L_on_W, random_state=rng)
-elif estimator == "partially_linear_no_x":
-    sim_setting["result"] = semi_est.partially_linear_model_no_crossfitting(Y, L, W, Y_on_LW, L_on_W)
+if estimator == "PLM":
+    result = semi_est.partially_linear_model(Y, L, W, Y_on_LW, L_on_W, random_state=rng)
+elif estimator == "PLM_no_x":
+    result = semi_est.partially_linear_model_no_crossfitting(Y, L, W, Y_on_LW, L_on_W)
 elif typ == "continuous":
-    if estimator == "onestep":
-        sim_setting["result"] = semi_est.average_partial_effect(Y, L, W, Y_on_LW, L_on_W, L_cond_var_W, random_state=rng)
-    elif estimator == "onestep_true":
-        sim_setting["result"] = semi_est.average_partial_effect_true_score(Y, L, W, Y_on_LW, true_score, random_state=rng)
-    elif estimator == "onestep_no_x": 
-        sim_setting["result"] = semi_est.average_partial_effect_no_crossfitting(Y, L, W, Y_on_LW, L_on_W, L_cond_var_W, random_state=rng)
+    if estimator == "NPM":
+        result = semi_est.average_partial_effect(Y, L, W, Y_on_LW, L_on_W, L_cond_var_W, random_state=rng)
+    elif estimator == "NPM_oracle":
+        result = semi_est.average_partial_effect_true_score(Y, L, W, Y_on_LW, true_score, random_state=rng)
+    elif estimator == "NPM_no_x": 
+        result = semi_est.average_partial_effect_no_crossfitting(Y, L, W, Y_on_LW, L_on_W, L_cond_var_W, random_state=rng)
     elif estimator == "plugin":
-        sim_setting["result"] = semi_est.average_partial_effect_plugin(Y, L, W, Y_on_LW, random_state=rng)
+        result = semi_est.average_partial_effect_plugin(Y, L, W, Y_on_LW, random_state=rng)
     elif estimator == "plugin_no_x":
-        sim_setting["result"] = semi_est.average_partial_effect_plugin_no_crossfitting(Y, L, W, Y_on_LW, random_state=rng)
+        result = semi_est.average_partial_effect_plugin_no_crossfitting(Y, L, W, Y_on_LW, random_state=rng)
 elif typ == "binary":
-    if estimator == "onestep":
-        sim_setting["result"] = semi_est.average_predictive_effect(Y, L, W, Y_on_LW, L_on_W, random_state=rng)
-    elif estimator == "onestep_true":
-        sim_setting["result"] = semi_est.average_predictive_effect_true_score(Y, L, W, Y_on_LW, true_score, random_state=rng)
-    elif estimator == "onestep_no_x":
-        sim_setting["result"] = semi_est.average_predictive_effect_no_crossfitting(Y, L, W, Y_on_LW, L_on_W)
+    if estimator == "NPM":
+        result = semi_est.average_predictive_effect(Y, L, W, Y_on_LW, L_on_W, random_state=rng)
+    elif estimator == "NPM_oracle":
+        result = semi_est.average_predictive_effect_true_score(Y, L, W, Y_on_LW, true_score, random_state=rng)
+    elif estimator == "NPM_no_x":
+        result = semi_est.average_predictive_effect_no_crossfitting(Y, L, W, Y_on_LW, L_on_W)
     elif estimator == "plugin":
-        sim_setting["result"] = semi_est.average_predictive_effect_plugin(Y, L, W, Y_on_LW, random_state=rng)
+        result = semi_est.average_predictive_effect_plugin(Y, L, W, Y_on_LW, random_state=rng)
     elif estimator == "plugin_no_x":
-        sim_setting["result"] = semi_est.average_predictive_effect_plugin_no_crossfitting(Y, L, W, Y_on_LW)
+        result = semi_est.average_predictive_effect_plugin_no_crossfitting(Y, L, W, Y_on_LW)
 
-sim_setting.to_pickle(os.path.join(os.path.dirname(setup_path), name + "_" + str(i) + ".pkl"))
+pd.Series({"n": n, "d": d, "estimator": estimator, "Y_regression": Y_regression, "type": typ, "seed": seed, "result": result}).to_pickle("experiments/semiparametrics-{Y_regression}-{typ}-{d}-{n}-{estimator}.pkl".format(Y_regression=Y_regression, typ=typ, d=d, n=n, estimator=estimator))

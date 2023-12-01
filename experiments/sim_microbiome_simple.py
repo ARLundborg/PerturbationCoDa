@@ -50,7 +50,7 @@ Z = Z.loc[:, np.log10(Z.mean(axis=0)) > log_abundance_threshold]
 Z = Z.loc[selected_indices, :]/Z.loc[selected_indices, :].sum(axis=1).to_numpy()[:, np.newaxis]
 
 
-# Run OLS on L
+# Run marginal effect of L
 n = Z.shape[0]
 def logit(x): return np.log(x/(1-x))
 
@@ -83,9 +83,9 @@ df = pd.concat((df, pd.DataFrame([{"var_name": name, "regression": "classo", "me
     "standard_error": np.nan
 }} for j, name in enumerate(Z.columns)])))
 
-df.to_pickle("experiments/clean_results/microbiome-simple_15-11-23.pkl")
+df.to_pickle("experiments/microbiome-simple.pkl")
 
-
+# Run log-contrast for many pseudocounts
 df = pd.DataFrame()
 significant_j = [339,  14, 466,  85, 138, 325, 476,  3, 112, 133]
 for pseudo_count in 10.0**(-np.linspace(1, 11, 1000)):
@@ -99,6 +99,6 @@ for pseudo_count in 10.0**(-np.linspace(1, 11, 1000)):
         "standard_error": np.sqrt(log_contrast_res["vcov_mat"][j, j]/n)
     }} for j, name in enumerate(Z.columns) if j in significant_j])))
 
-df.to_pickle("experiments/clean_results/microbiome-log-contrast_17-11-23.pkl")
+df.to_pickle("experiments/microbiome-pseudocount.pkl")
 
 

@@ -10,3 +10,5 @@ data/microbiome/*.csv
 *.pyc
 *.cpp
 *.pdf
+*.DS_Store
+*.pkl

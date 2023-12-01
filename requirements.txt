@@ -1,6 +1,6 @@
 scikit-learn
 scipy
-numpy
+numpy==1.24.3
 matplotlib
 Cython==0.29.33
 pandas

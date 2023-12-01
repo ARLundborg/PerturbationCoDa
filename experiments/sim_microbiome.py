@@ -13,44 +13,69 @@ from sklearn.inspection import permutation_importance
 from sklearn.feature_selection import SelectFromModel
 from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.dummy import DummyClassifier, DummyRegressor
-import argparse
-import os
-import pathlib
+from collections import defaultdict
 
 
-parser = argparse.ArgumentParser(
-    description="Run microbiome sim using setup file provided",
-    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+taxonomic_levels = ["kingdom", "phylum", "class", "order",
+                    "family", "genus", "species"]
+level_idx = taxonomic_levels.index("species")
 
-parser.add_argument("-i", "--index", type=int,
-                    help="row index in the setup data frame to use for the simulation", required=True)
-parser.add_argument("-p", "--path", type=str,
-                    help="path of the setup file", required=True)
-args = vars(parser.parse_args())
+# Load data
+X = pd.read_csv("data/microbiome/X_data.csv", delimiter=",",
+                engine="c", index_col=0, dtype=defaultdict(np.float64, {0: str}))
+meta_data = pd.read_csv("data/microbiome/meta_data.csv", delimiter=",", engine="c",
+                        index_col=0, na_values=["unknown", "Unspecified"], dtype={0: "str"}, low_memory=False)
 
-setup_path = args.pop("path")
-Z_path = os.path.splitext(setup_path)[0] + "-Z.pkl"
-Y_path = os.path.splitext(setup_path)[0] + "-Y.pkl"
-name = pathlib.Path(setup_path).stem
-i = int(args["index"])
+BMI = meta_data["weight_kg"].astype(
+    float)/(meta_data["height_cm"].astype(float)/100)**2
+
+selected_indices = (BMI > 15) & (BMI < 40)
+selected_indices &= (meta_data["height_cm"] > 145) & (
+    meta_data["height_cm"] < 220)
+selected_indices &= (meta_data["country"] == "USA")
+selected_indices &= (meta_data["age_years"] >= 16)
+
+X_num = X.to_numpy()
+Z = X_num[selected_indices, :] / \
+    X_num[selected_indices, :].sum(axis=1)[:, np.newaxis]
+Z = pd.DataFrame(Z, columns=X.columns,
+                 index=selected_indices[selected_indices].index)
+Y = BMI[selected_indices]
+
+Z_T = Z.T
+Z_T["species"] = Z.T.index.str.split(";").map(lambda x: x[6])
+Z_T["genus"] = Z.T.index.str.split(";").map(lambda x: x[5])
+Z_T["family"] = Z.T.index.str.split(";").map(lambda x: x[4])
+Z_T["order"] = Z.T.index.str.split(";").map(lambda x: x[3])
+Z_T["class"] = Z.T.index.str.split(";").map(lambda x: x[2])
+Z_T["phylum"] = Z.T.index.str.split(";").map(lambda x: x[1])
+Z_T["kingdom"] = Z.T.index.str.split(";").map(lambda x: x[0])
+Z = Z_T.groupby(taxonomic_levels[0:(level_idx+1)]).sum(numeric_only=True).T
+Z.columns = Z.columns.map(";".join)
+
+prevalence_threshold = 0.10
+Z = Z.loc[:, (Z > 0).mean(axis=0) > prevalence_threshold]
+
+log_abundance_threshold = -4
+Z = Z.loc[:, np.log10(Z.mean(axis=0)) > log_abundance_threshold]
+
+Z = Z.loc[selected_indices, :]/Z.loc[selected_indices, :].sum(axis=1).to_numpy()[:, np.newaxis]
 
 
-sim_setting = pd.read_pickle(setup_path).iloc[i]
-Z_df = pd.read_pickle(Z_path)
-Y_df = pd.read_pickle(Y_path)
+Z_df = Z.copy()
+Y_df = Y.copy()
 
 Z = Z_df.to_numpy()
 Y = Y_df.to_numpy()
 
-measure = sim_setting["measure"]
-regression = sim_setting["regression"]
-var_name = sim_setting["var_name"]
-if pd.isnull(var_name):
-    j = np.nan
-else:
-    j = np.argmax(Z_df.columns == var_name)
-    sim_setting["j"] = j
-seed = sim_setting["seed"]
+measure = "CKE" # one of ["CKE", "NP-CKE", "CFI_unit", "CFI_mult", "DML", "R2", "perm"]
+regression = "rf" # one of ["rf", "mlp", "svr", "cv"]
+
+# var_name holds the name of the target feature (this is ignored by perm that does all variables simultaneously)
+var_name = Z_df.index[0]
+j = np.argmax(Z_df.columns == var_name)
+
+seed = 11223 # in the experiments this seed was set differently for each single simulation
 rng = np.random.RandomState(seed)
 
 binary_L_measures = ["CKE", "NP-CKE"]
@@ -174,9 +199,6 @@ elif regression == "cv":
 
 # Measures
 
-classo_measures = ["classo_2", "classo_8", "classo_32", "classo_2_refit", "classo_8_refit", "classo_32_refit"]
-
-
 if measure == "perm":
     folds = KFold(5, shuffle=True, random_state=rng).split(Y)
     importances = np.zeros((Z.shape[1], 5))
@@ -190,22 +212,9 @@ if measure == "perm":
     sim_setting["Y_var"] = np.var(Y)
     sim_setting["L_reg_score"] = np.nan
     sim_setting["L_var"] = np.nan
-elif measure in classo_measures:
-    split_measure = measure.split("_")
-
-    min_denominator = float(split_measure[1])
-    refit = (len(split_measure) == 3)
-    pseudo_count = np.min(Z[np.where(Z != 0)])/min_denominator
-    res = semi_est.sparse_log_contrast(Z, Y, pseudo_count, refit=refit, seed=seed)
-    coefs = res["beta"]
-    score = res["score"]
-    classo_results = [{"estimate": coef, "variance": np.nan, "standard_error": np.nan} for coef in coefs]
-    sim_setting = pd.DataFrame([{"var_name": col_name, "regression": regression, "measure": measure, "j": j, "seed": seed, "result": result} for j, (col_name, result) in enumerate(zip(Z_df.columns, classo_results))])
-    sim_setting["Y_reg_score"] = score
-    sim_setting["Y_var"] = np.var(Y)
-    sim_setting["L_reg_score"] = np.nan
-    sim_setting["L_var"] = np.nan
+    sim_setting.to_pickle("experiments/{measure}-{reg}.pkl".format(reg=regression, measure=measure))
 else:
+    sim_setting = pd.Series({"var_name": var_name, "regression": regression, "measure": measure, "j": j, "seed": seed})
     if measure == "DML":
         L = Z[:, j]
         W = np.delete(Z, j, axis=1)
@@ -252,8 +261,5 @@ else:
     sim_setting["Y_var"] = np.var(Y)
     sim_setting["Y_reg_score"] = Y_on_LW.fit(W, Y)[-1].best_score_
     sim_setting["L_reg_score"] = L_on_W.fit(W, L)[-1].best_score_
-
-
-
-sim_setting.to_pickle(os.path.join(os.path.dirname(setup_path), name + "_" + str(i) + ".pkl"))
+    sim_setting.to_pickle("experiments/{measure}-{reg}-{j}.pkl".format(reg=regression, measure=measure, j=j))
 
