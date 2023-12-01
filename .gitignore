@@ -7,3 +7,5 @@ data/adult/adult.*
 data/adult/Index
 data/adult/old.adult.names
 data/microbiome/*.csv
+*.pyc
+*.cpp
