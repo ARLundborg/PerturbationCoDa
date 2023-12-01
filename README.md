@@ -6,7 +6,7 @@ This repository contains code for the paper [Perturbation-based Analysis of Comp
 ## Installation
 The experiments of the paper are run in Python 3.11. The required packages are specified in the `requirements.txt` file (be aware that the `Cython`-package needs a specific version!). 
 
-To be able to run the code in the package, the `regressiontree` package needs to be installed and compiled. To do so, run the command `pip install -e regressiontree` command. If you have any trouble with this step, feel free to contact one of the authors of the paper via email or open a GitHub issue.
+To be able to run the code, the `regressiontree` package needs to be installed and compiled. To do so, run the command `pip install -e regressiontree` command. If you have any trouble with this step, feel free to contact one of the authors of the paper via email or open a GitHub issue.
 
 ## Code structure
 The `main` folder contains the code for the functions used in the experiments while the `experiments` folder contains functions that run the different experiments. The `data` folder holds the two real datasets used in the experiments. The `plots` folder is empty and used to output the results of the Adult data experiment and the semiparametric robustness experiment.
