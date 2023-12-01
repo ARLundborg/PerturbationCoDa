@@ -60,7 +60,7 @@ df[">HS-education"] = (df["education-num"] > 9).astype(int)
 
 
 # Grouping on edu and race
-
+print("Grouping on race and education:")
 ## Setting aggregation group probabilities
 
 ### P(race)
@@ -175,28 +175,28 @@ folds = 10
 
 
 res = pert.cdi_gini(Y, Z, Y_regression, L_regression, folds=folds, random_state=rng)
-print("CDI_Gini, no X, est:{:.3f}, CI: ({:.3f}, {:.3f})".format(res["estimate"], res["estimate"] - 1.96*res["standard_error"], res["estimate"] + 1.96*res["standard_error"]))
+print("CDI_Gini, est:{:.3f}, CI: ({:.3f}, {:.3f})".format(res["estimate"], res["estimate"] - 1.96*res["standard_error"], res["estimate"] + 1.96*res["standard_error"]))
 
 res = semi_est.linear_effect(Y, L, np.zeros((L.shape[0], 0)))
-print("LM on L, no X, est:{:.3f}, CI: ({:.3f}, {:.3f})".format(res["estimate"], res["estimate"] - 1.96*res["standard_error"], res["estimate"] + 1.96*res["standard_error"]))
+print("naive_diversity, est:{:.3f}, CI: ({:.3f}, {:.3f})".format(res["estimate"], res["estimate"] - 1.96*res["standard_error"], res["estimate"] + 1.96*res["standard_error"]))
 
 res = semi_est.partially_linear_model(Y, L, Z, Y_regression, L_regression, folds=folds, random_state=rng)
-print("DML on L, conditioning on Z, est:{:.3f}, CI: ({:.3f}, {:.3f})".format(res["estimate"], res["estimate"] - 1.96*res["standard_error"], res["estimate"] + 1.96*res["standard_error"]))
+print("naive_diversity | Z, est:{:.3f}, CI: ({:.3f}, {:.3f})".format(res["estimate"], res["estimate"] - 1.96*res["standard_error"], res["estimate"] + 1.96*res["standard_error"]))
 
 
 X = pd.get_dummies(final_df[["education", "age", "sex"]]).to_numpy()
 
 res = pert.cdi_gini(Y, Z, Y_regression, L_regression, folds=folds, X=X, random_state=rng)
-print("CDI_Gini, with X, est:{:.3f}, CI: ({:.3f}, {:.3f})".format(res["estimate"], res["estimate"] - 1.96*res["standard_error"], res["estimate"] + 1.96*res["standard_error"]))
+print("CDI_Gini | X, est:{:.3f}, CI: ({:.3f}, {:.3f})".format(res["estimate"], res["estimate"] - 1.96*res["standard_error"], res["estimate"] + 1.96*res["standard_error"]))
 
 res = semi_est.partially_linear_model(Y, L, X, Y_regression, L_regression, folds=folds, random_state=rng)
-print("DML on L, with X, est:{:.3f}, CI: ({:.3f}, {:.3f})".format(res["estimate"], res["estimate"] - 1.96*res["standard_error"], res["estimate"] + 1.96*res["standard_error"]))
+print("naive_diversity | X, est:{:.3f}, CI: ({:.3f}, {:.3f})".format(res["estimate"], res["estimate"] - 1.96*res["standard_error"], res["estimate"] + 1.96*res["standard_error"]))
 
 res = semi_est.partially_linear_model(Y, L, np.c_[X, Z], Y_regression, L_regression, folds=folds, random_state=rng)
-print("DML on L, conditioning on Z and X, est:{:.3f}, CI: ({:.3f}, {:.3f})".format(res["estimate"], res["estimate"] - 1.96*res["standard_error"], res["estimate"] + 1.96*res["standard_error"]))
+print("naive_diversity | (X, Z), est:{:.3f}, CI: ({:.3f}, {:.3f})".format(res["estimate"], res["estimate"] - 1.96*res["standard_error"], res["estimate"] + 1.96*res["standard_error"]))
 
 # Grouping on comp and race
-
+print("Grouping on race and compensation:")
 ### P(comp)
 comps = [0, 1]
 comp_prop = (df.groupby("compensation").size()/len(df)).to_dict()
@@ -298,23 +298,23 @@ folds = 10
 
 
 res = pert.cdi_gini(Y, Z, Y_regression, L_regression, folds=folds, random_state=rng)
-print("CDI_Gini, no X, est:{:.3f}, CI: ({:.3f}, {:.3f})".format(res["estimate"], res["estimate"] - 1.96*res["standard_error"], res["estimate"] + 1.96*res["standard_error"]))
+print("CDI_Gini, est:{:.3f}, CI: ({:.3f}, {:.3f})".format(res["estimate"], res["estimate"] - 1.96*res["standard_error"], res["estimate"] + 1.96*res["standard_error"]))
 
 res = semi_est.linear_effect(Y, L, np.zeros((L.shape[0], 0)))
-print("LM on L, no X, est:{:.3f}, CI: ({:.3f}, {:.3f})".format(res["estimate"], res["estimate"] - 1.96*res["standard_error"], res["estimate"] + 1.96*res["standard_error"]))
+print("naive_diversity, est:{:.3f}, CI: ({:.3f}, {:.3f})".format(res["estimate"], res["estimate"] - 1.96*res["standard_error"], res["estimate"] + 1.96*res["standard_error"]))
 
 res = semi_est.partially_linear_model(Y, L, Z, Y_regression, L_regression, folds=folds, random_state=rng)
-print("DML on L, conditioning on Z, est:{:.3f}, CI: ({:.3f}, {:.3f})".format(res["estimate"], res["estimate"] - 1.96*res["standard_error"], res["estimate"] + 1.96*res["standard_error"]))
+print("naive_diversity | Z, est:{:.3f}, CI: ({:.3f}, {:.3f})".format(res["estimate"], res["estimate"] - 1.96*res["standard_error"], res["estimate"] + 1.96*res["standard_error"]))
 
 
 
 X = pd.get_dummies(final_df[["education", "age", "sex"]]).to_numpy()
 
 res = pert.cdi_gini(Y, Z, Y_regression, L_regression, folds=folds, X=X, random_state=rng)
-print("CDI_Gini, with X, est:{:.3f}, CI: ({:.3f}, {:.3f})".format(res["estimate"], res["estimate"] - 1.96*res["standard_error"], res["estimate"] + 1.96*res["standard_error"]))
+print("CDI_Gini| X, est:{:.3f}, CI: ({:.3f}, {:.3f})".format(res["estimate"], res["estimate"] - 1.96*res["standard_error"], res["estimate"] + 1.96*res["standard_error"]))
 
 res = semi_est.partially_linear_model(Y, L, X, Y_regression, L_regression, folds=folds, random_state=rng)
-print("DML on L, with X, est:{:.3f}, CI: ({:.3f}, {:.3f})".format(res["estimate"], res["estimate"] - 1.96*res["standard_error"], res["estimate"] + 1.96*res["standard_error"]))
+print("naive_diversity | X, est:{:.3f}, CI: ({:.3f}, {:.3f})".format(res["estimate"], res["estimate"] - 1.96*res["standard_error"], res["estimate"] + 1.96*res["standard_error"]))
 
 res = semi_est.partially_linear_model(Y, L, np.c_[X, Z], Y_regression, L_regression, folds=folds, random_state=rng)
-print("DML on L, conditioning on Z and X, est:{:.3f}, CI: ({:.3f}, {:.3f})".format(res["estimate"], res["estimate"] - 1.96*res["standard_error"], res["estimate"] + 1.96*res["standard_error"]))
+print("naive_diversity | (X, Z), est:{:.3f}, CI: ({:.3f}, {:.3f})".format(res["estimate"], res["estimate"] - 1.96*res["standard_error"], res["estimate"] + 1.96*res["standard_error"]))

@@ -1,0 +1,2 @@
+# Adult data
+The Adult data can be loaded [here](https://archive.ics.uci.edu/dataset/2/adult). For the code to run, the 5 files in the `.zip` file need to be extracted and put in the `data/adult` folder.

@@ -9,3 +9,4 @@ data/adult/old.adult.names
 data/microbiome/*.csv
 *.pyc
 *.cpp
+*.pdf

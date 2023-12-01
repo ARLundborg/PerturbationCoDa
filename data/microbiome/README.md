@@ -1,0 +1,2 @@
+# microbiome data
+To replicate the data used in the analysis of Section 4.3 of the [paper](https://arxiv.org/abs/2311.18501), download the two files [here](https://github.com/jacobbien/trac-reproducible/tree/main/AmericanGut/original) and run the `prep_data.R` script. This should result in two files `X.csv` and `meta_data.csv`.
