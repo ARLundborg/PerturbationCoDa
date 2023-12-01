@@ -1,0 +1,9 @@
+.venv
+regressiontree/build
+regressiontree/RegressionTree.egg-info
+regressiontree/regressiontree/*.c
+regressiontree/regressiontree/*.so
+data/adult/adult.*
+data/adult/Index
+data/adult/old.adult.names
+data/microbiome/*.csv

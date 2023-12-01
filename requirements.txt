@@ -1,0 +1,8 @@
+scikit-learn
+scipy
+numpy
+matplotlib
+Cython==0.29.33
+pandas
+c-lasso
+regressiontree
