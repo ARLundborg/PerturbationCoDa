@@ -4,7 +4,7 @@ This repository contains code for the paper [Perturbation-based Analysis of Comp
 
 
 ## Installation
-The experiments of the paper are run in Python 3.11. The required packages are specified in the `requirements.txt` file (be aware that the `Cython`-package needs a specific version!). 
+The experiments of the paper are run in Python 3.11. The required packages are specified in the `requirements.txt` file (be aware that the `Cython` and `numpy`-packages need a specific versions!). 
 
 To be able to run the code, the `regressiontree` package needs to be installed and compiled. To do so, run the command `pip install -e regressiontree` command. If you have any trouble with this step, feel free to contact one of the authors of the paper via email or open a GitHub issue.
 
