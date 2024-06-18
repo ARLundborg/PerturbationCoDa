@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import main.perturbation_effects as pert
 import main.semiparametric_estimators as semi_est
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
 import matplotlib.pyplot as plt
 from matplotlib.cm import ScalarMappable
 import matplotlib.colors
@@ -111,7 +111,7 @@ race_edu_prob_dict_1 = {(race, edu): race_prob_dict_1[race]*edu_prob_dict_1[edu]
 race_edu_prob_dict_2 = {(race, edu): race_prob_dict_2[race]*edu_prob_dict_2[edu] for race in races for edu in edus}
 
 ### Aggregating data within group
-df["agg_group"] = df.apply(lambda x: rng.choice([0, 1, 2],
+df["agg_group_edu"] = df.apply(lambda x: rng.choice([0, 1, 2],
             p=np.r_[1-race_edu_prob_dict_1[(x["race"], x[">HS-education"])] - 
                     race_edu_prob_dict_2[(x["race"], x[">HS-education"])],
                     race_edu_prob_dict_1[(x["race"], x[">HS-education"])],
@@ -121,14 +121,14 @@ df["agg_group"] = df.apply(lambda x: rng.choice([0, 1, 2],
 
 df = df.sample(frac=1, random_state=rng).reset_index(drop=True)
 
-df["chunk"] = ""
+df["chunk_edu"] = ""
 chunk_size = 50 
-chunk_index_dict = df.groupby("agg_group").apply(lambda x: np.array_split(x.index, np.ceil(len(x)/chunk_size))).to_dict()
+chunk_index_dict = df.groupby("agg_group_edu").apply(lambda x: np.array_split(x.index, np.ceil(len(x)/chunk_size))).to_dict()
 for agg_group, chunk_index_groups in chunk_index_dict.items():
     for i, chunk_index_group in enumerate(chunk_index_groups):
-        df.loc[chunk_index_group, "chunk"] = "{}_{}".format(agg_group, i)
+        df.loc[chunk_index_group, "chunk_edu"] = "{}_{}".format(agg_group, i)
 
-final_df = aggregate_df(df, seed, "race", "chunk")
+final_df = aggregate_df(df, seed, "race", "chunk_edu")
 
 
 ## Plotting
@@ -140,7 +140,7 @@ d = Z.shape[1]
 norms = np.linalg.norm(Z-1/d, axis=1, ord=1)
 L = -np.apply_along_axis(lambda x: np.abs(np.subtract.outer(x, x)).sum(), 1, Z)/(2*d)
 
-agg_group = final_df["agg_group"]
+agg_group = final_df["agg_group_edu"]
 ax1 = fig.add_subplot(221, projection="ternary")
 ax1.scatter(Z[agg_group == 0, 0], Z[agg_group == 0, 1], Z[agg_group == 0, 2], color=color1,alpha=0.4)
 ax1.scatter(Z[agg_group == 1, 0], Z[agg_group == 1, 1], Z[agg_group == 1, 2], color=color2,alpha=0.4)
@@ -161,11 +161,14 @@ B = np.matmul(W, A)
 theta = np.sign(B[:, 1])*np.arccos(B[:, 0])
 
 ax2 = fig.add_subplot(223)
-ax2.scatter(-L, Y, c=theta, cmap="viridis")
+ax2.scatter(-L, Y, c=theta, cmap="twilight")
 ax2.set_xlabel(r"Gini coefficient")
 ax2.set_ylabel(r"Average compensation")
+ax2.set_aspect(1)
+ax2.set_ylim(0, 0.5)
+ax2.set_xlim(0.2, 0.7)
 
-print("Category 0: {}, Category 1: {}, Category 2: {}, Total: {}".format(*final_df["agg_group"].value_counts().to_numpy(), final_df.shape[0]))
+print("Category 0: {}, Category 1: {}, Category 2: {}, Total: {}".format(*final_df["agg_group_edu"].value_counts().to_numpy(), final_df.shape[0]))
 
 ## Effect estimation
 
@@ -225,7 +228,7 @@ race_comp_prob_dict_2 = {(race, comp): race_prob_dict_2[race]*comp_prob_dict_2[c
 ### Aggregating data within group
 seed = 838582 + 1
 rng = np.random.RandomState(seed)
-df["agg_group"] = df.apply(lambda x: rng.choice([0, 1, 2],
+df["agg_group_comp"] = df.apply(lambda x: rng.choice([0, 1, 2],
             p=np.r_[1-race_comp_prob_dict_1[(x["race"], x["compensation"])] - 
                     race_comp_prob_dict_2[(x["race"], x["compensation"])],
                     race_comp_prob_dict_1[(x["race"], x["compensation"])],
@@ -235,14 +238,14 @@ df["agg_group"] = df.apply(lambda x: rng.choice([0, 1, 2],
 
 df = df.sample(frac=1, random_state=rng).reset_index(drop=True)
 
-df["chunk"] = ""
+df["chunk_comp"] = ""
 chunk_size = 50 
-chunk_index_dict = df.groupby("agg_group").apply(lambda x: np.array_split(x.index, np.ceil(len(x)/chunk_size))).to_dict()
+chunk_index_dict = df.groupby("agg_group_comp").apply(lambda x: np.array_split(x.index, np.ceil(len(x)/chunk_size))).to_dict()
 for agg_group, chunk_index_groups in chunk_index_dict.items():
     for i, chunk_index_group in enumerate(chunk_index_groups):
-        df.loc[chunk_index_group, "chunk"] = "{}_{}".format(agg_group, i)
+        df.loc[chunk_index_group, "chunk_comp"] = "{}_{}".format(agg_group, i)
 
-final_df = aggregate_df(df, seed, "race", "chunk")
+final_df = aggregate_df(df, seed, "race", "chunk_comp")
 
 
 ## Plotting
@@ -255,7 +258,7 @@ d = Z.shape[1]
 norms = np.linalg.norm(Z-1/d, axis=1, ord=1)
 L = -np.apply_along_axis(lambda x: np.abs(np.subtract.outer(x, x)).sum(), 1, Z)/(2*d)
 
-agg_group = final_df["agg_group"]
+agg_group = final_df["agg_group_comp"]
 ax3 = fig.add_subplot(222, projection="ternary")
 ax3.scatter(Z[agg_group == 0, 0], Z[agg_group == 0, 1], Z[agg_group == 0, 2], color=color1, alpha=0.4)
 ax3.scatter(Z[agg_group == 1, 0], Z[agg_group == 1, 1], Z[agg_group == 1, 2], color=color2, alpha=0.4)
@@ -276,9 +279,13 @@ B = np.matmul(W, A)
 theta = np.sign(B[:, 1])*np.arccos(B[:, 0])
 
 ax4 = fig.add_subplot(224)
-colors = ax4.scatter(-L, Y, c=theta, cmap="viridis")
+colors = ax4.scatter(-L, Y, c=theta, cmap="twilight")
 ax4.set_xlabel(r"Gini coefficient")
 ax4.set_ylabel(r"Average compensation")
+ax4.set_aspect(1)
+ax4.set_ylim(0, 0.5)
+ax4.set_xlim(0.2, 0.7)
+
 clb = fig.colorbar(colors, ax=[ax2, ax4], fraction=0.1)
 clb.ax.set_title(r"$W$")
 clb.set_ticks([])
@@ -286,9 +293,11 @@ clb = fig.colorbar(ScalarMappable(cmap=matplotlib.colors.ListedColormap(["white"
 clb.outline.set_visible(False)
 clb.set_ticks([])
 
+
+
 fig.savefig("plots/adult_confounding.pdf", bbox_inches="tight")
 
-print("Category 0: {}, Category 1: {}, Category 2: {}, Total: {}".format(*final_df["agg_group"].value_counts().to_numpy(), final_df.shape[0]))
+print("Category 0: {}, Category 1: {}, Category 2: {}, Total: {}".format(*final_df["agg_group_comp"].value_counts().to_numpy(), final_df.shape[0]))
 
 ## Effect estimation
 
@@ -311,10 +320,48 @@ print("naive_diversity | Z, est:{:.3f}, CI: ({:.3f}, {:.3f})".format(res["estima
 X = pd.get_dummies(final_df[["education", "age", "sex"]]).to_numpy()
 
 res = pert.cdi_gini(Y, Z, Y_regression, L_regression, folds=folds, X=X, random_state=rng)
-print("CDI_Gini| X, est:{:.3f}, CI: ({:.3f}, {:.3f})".format(res["estimate"], res["estimate"] - 1.96*res["standard_error"], res["estimate"] + 1.96*res["standard_error"]))
+print("CDI_Gini | X, est:{:.3f}, CI: ({:.3f}, {:.3f})".format(res["estimate"], res["estimate"] - 1.96*res["standard_error"], res["estimate"] + 1.96*res["standard_error"]))
 
 res = semi_est.partially_linear_model(Y, L, X, Y_regression, L_regression, folds=folds, random_state=rng)
 print("naive_diversity | X, est:{:.3f}, CI: ({:.3f}, {:.3f})".format(res["estimate"], res["estimate"] - 1.96*res["standard_error"], res["estimate"] + 1.96*res["standard_error"]))
 
 res = semi_est.partially_linear_model(Y, L, np.c_[X, Z], Y_regression, L_regression, folds=folds, random_state=rng)
 print("naive_diversity | (X, Z), est:{:.3f}, CI: ({:.3f}, {:.3f})".format(res["estimate"], res["estimate"] - 1.96*res["standard_error"], res["estimate"] + 1.96*res["standard_error"]))
+
+
+
+# Individual level experiments
+print("Grouping on race and compensation -- Individual level resampled experiment:")
+
+df["comp_prob_comp"] =df["chunk_comp"].map(df.groupby("chunk_comp")["compensation"].mean().to_dict())
+
+chunk_comp_race_prop = df.groupby("chunk_comp")["race"].value_counts(normalize=True).reset_index().pivot(index="chunk_comp", columns="race", values="proportion").fillna(0)
+df = pd.merge(df, chunk_comp_race_prop.add_suffix("_comp"), on="chunk_comp")
+
+Y = rng.binomial(1, df["comp_prob_comp"], df.shape[0])
+Z = df.loc[:, ["Black_comp", "Other_comp", "White_comp"]].to_numpy()
+
+d = Z.shape[1]
+norms = np.linalg.norm(Z-1/d, axis=1, ord=1)
+L = -np.apply_along_axis(lambda x: np.abs(np.subtract.outer(x, x)).sum(), 1, Z)/(2*d)
+R = pd.get_dummies(df["race"]).to_numpy()
+X = pd.get_dummies(df[["education", "age", "sex"]]).to_numpy()
+
+
+
+Y_regression = RandomForestClassifier(250, oob_score=True, max_features=None, random_state=rng, n_jobs=-1)
+L_regression = RandomForestRegressor(250, oob_score=True, max_features=None, random_state=rng, n_jobs=-1)
+folds = 10
+
+
+res = pert.cdi_gini(Y, Z, Y_regression, L_regression, folds=folds, random_state=rng, X=R)
+print("CDI_Gini | R, est:{:.3f}, CI: ({:.3f}, {:.3f})".format(res["estimate"], res["estimate"] - 1.96*res["standard_error"], res["estimate"] + 1.96*res["standard_error"]))
+
+res = semi_est.partially_linear_model(Y, L, R, Y_regression, L_regression, folds=folds, random_state=rng)
+print("naive_diversity | R, est:{:.3f}, CI: ({:.3f}, {:.3f})".format(res["estimate"], res["estimate"] - 1.96*res["standard_error"], res["estimate"] + 1.96*res["standard_error"]))
+
+res = pert.cdi_gini(Y, Z, Y_regression, L_regression, folds=folds, X=np.c_[R, X], random_state=rng)
+print("CDI_Gini | R, X, est:{:.3f}, CI: ({:.3f}, {:.3f})".format(res["estimate"], res["estimate"] - 1.96*res["standard_error"], res["estimate"] + 1.96*res["standard_error"]))
+
+res = semi_est.partially_linear_model(Y, L, np.c_[R, X], Y_regression, L_regression, folds=folds, random_state=rng)
+print("naive_diversity | R, X, est:{:.3f}, CI: ({:.3f}, {:.3f})".format(res["estimate"], res["estimate"] - 1.96*res["standard_error"], res["estimate"] + 1.96*res["standard_error"]))
