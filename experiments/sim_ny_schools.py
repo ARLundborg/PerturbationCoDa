@@ -53,7 +53,7 @@ sim_res = list()
 Y_columns = ['Average ELA Proficiency', 'Average Math Proficiency']
 for column in Y_columns:
   print("Y = {}".format(column))
-  L = -np.apply_along_axis(lambda x: np.abs(np.subtract.outer(x, x)).sum(), 1, Z)/(2*d)
+  L = 1-np.apply_along_axis(lambda x: np.abs(np.subtract.outer(x, x)).sum(), 1, Z)/(2*d)
   Y = df.loc[:, column].to_numpy()
   for covariates in ["no", "yes"]:
     if covariates == "yes": 
