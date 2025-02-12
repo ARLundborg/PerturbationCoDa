@@ -42,7 +42,7 @@ def cdi_gini(Y, Z, Y_regression, L_regression, X=None, method="partially_linear"
     norms = np.linalg.norm(Z-1/d, axis=1, ord=1)
     ginis = np.apply_along_axis(lambda x: np.abs(
         np.subtract.outer(x, x)).sum(), 1, Z)/(2*d)
-    L = -ginis
+    L = 1-ginis
     W = (Z-1/d)/norms[:, np.newaxis]
 
     if X is not None:
