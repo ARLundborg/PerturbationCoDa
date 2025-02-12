@@ -16,8 +16,7 @@ plt.rcParams.update({'font.size': 16})
 plt.rc('text.latex', preamble=r'\usepackage{amsfonts,amssymb,amsthm,amsmath}')
 plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 
-fig = plt.figure(figsize=(12.5, 10))
-fig.subplots_adjust(wspace=0.6, hspace=0.2)
+fig = plt.figure(figsize=(15, 5))
 color1 = "C0"
 color2 = "C2"
 color3 = "C3"
@@ -138,14 +137,13 @@ Y = final_df["compensation"].to_numpy()
 
 d = Z.shape[1]
 norms = np.linalg.norm(Z-1/d, axis=1, ord=1)
-L = -np.apply_along_axis(lambda x: np.abs(np.subtract.outer(x, x)).sum(), 1, Z)/(2*d)
+L = 1-np.apply_along_axis(lambda x: np.abs(np.subtract.outer(x, x)).sum(), 1, Z)/(2*d)
 
 agg_group = final_df["agg_group_edu"]
-ax1 = fig.add_subplot(221, projection="ternary")
+ax1 = fig.add_subplot(121, projection="ternary")
 ax1.scatter(Z[agg_group == 0, 0], Z[agg_group == 0, 1], Z[agg_group == 0, 2], color=color1,alpha=0.4)
 ax1.scatter(Z[agg_group == 1, 0], Z[agg_group == 1, 1], Z[agg_group == 1, 2], color=color2,alpha=0.4)
 ax1.scatter(Z[agg_group == 2, 0], Z[agg_group == 2, 1], Z[agg_group == 2, 2], color=color3, alpha=0.4)
-ax1.set_title(r"Grouping by race and education", y=1.1)
 ax1.set_tlabel(r'Black')
 ax1.set_llabel(r'Other')
 ax1.set_rlabel(r'White')
@@ -160,13 +158,27 @@ A = np.array([[-1/np.sqrt(2), -1/np.sqrt(6)], [1/np.sqrt(2), -1/np.sqrt(6)], [0,
 B = np.matmul(W, A)
 theta = np.sign(B[:, 1])*np.arccos(B[:, 0])
 
-ax2 = fig.add_subplot(223)
-ax2.scatter(-L, Y, c=theta, cmap="twilight")
-ax2.set_xlabel(r"Gini coefficient")
+ax2 = fig.add_subplot(122)
+colors = ax2.scatter(L, Y, c=theta, cmap="twilight")
+ax2.set_xlabel(r"$1 - \textrm{Gini coefficient}$")
 ax2.set_ylabel(r"Average compensation")
 ax2.set_aspect(1)
 ax2.set_ylim(0, 0.5)
-ax2.set_xlim(0.2, 0.7)
+ax2.set_xlim(0.3, 0.8)
+
+fig.subplots_adjust(wspace=0)
+
+
+clb = fig.colorbar(colors, ax=[ax2], fraction=0.1)
+clb.ax.set_title(r"$W$")
+clb.set_ticks([])
+clb = fig.colorbar(ScalarMappable(cmap=matplotlib.colors.ListedColormap(["white"])), ax=[ax1], fraction=0.1)
+clb.outline.set_visible(False)
+clb.set_ticks([])
+
+
+fig.savefig("plots/adult_confounding_edu.pdf", bbox_inches="tight")
+
 
 print("Category 0: {}, Category 1: {}, Category 2: {}, Total: {}".format(*final_df["agg_group_edu"].value_counts().to_numpy(), final_df.shape[0]))
 
@@ -199,6 +211,8 @@ res = semi_est.partially_linear_model(Y, L, np.c_[X, Z], Y_regression, L_regress
 print("naive_diversity | (X, Z), est:{:.3f}, CI: ({:.3f}, {:.3f})".format(res["estimate"], res["estimate"] - 1.96*res["standard_error"], res["estimate"] + 1.96*res["standard_error"]))
 
 # Grouping on comp and race
+fig = plt.figure(figsize=(15, 5))
+
 print("Grouping on race and compensation:")
 ### P(comp)
 comps = [0, 1]
@@ -256,21 +270,19 @@ Y = final_df["compensation"].to_numpy()
 
 d = Z.shape[1]
 norms = np.linalg.norm(Z-1/d, axis=1, ord=1)
-L = -np.apply_along_axis(lambda x: np.abs(np.subtract.outer(x, x)).sum(), 1, Z)/(2*d)
-
+L = 1-np.apply_along_axis(lambda x: np.abs(np.subtract.outer(x, x)).sum(), 1, Z)/(2*d)
 agg_group = final_df["agg_group_comp"]
-ax3 = fig.add_subplot(222, projection="ternary")
-ax3.scatter(Z[agg_group == 0, 0], Z[agg_group == 0, 1], Z[agg_group == 0, 2], color=color1, alpha=0.4)
-ax3.scatter(Z[agg_group == 1, 0], Z[agg_group == 1, 1], Z[agg_group == 1, 2], color=color2, alpha=0.4)
-ax3.scatter(Z[agg_group == 2, 0], Z[agg_group == 2, 1], Z[agg_group == 2, 2], color=color3, alpha=0.4)
-ax3.set_title(r"Grouping by race and compensation", y=1.1)
-ax3.set_tlabel(r'Black')
-ax3.set_llabel(r'Other')
-ax3.set_rlabel(r'White')
-ax3.taxis.set_label_position("tick1")
-ax3.laxis.set_label_position("tick1")
-ax3.raxis.set_label_position("tick1")
-ax3.tick_params(axis='both', which='major', labelsize=12)
+ax1 = fig.add_subplot(121, projection="ternary")
+ax1.scatter(Z[agg_group == 0, 0], Z[agg_group == 0, 1], Z[agg_group == 0, 2], color=color1,alpha=0.4)
+ax1.scatter(Z[agg_group == 1, 0], Z[agg_group == 1, 1], Z[agg_group == 1, 2], color=color2,alpha=0.4)
+ax1.scatter(Z[agg_group == 2, 0], Z[agg_group == 2, 1], Z[agg_group == 2, 2], color=color3, alpha=0.4)
+ax1.set_tlabel(r'Black')
+ax1.set_llabel(r'Other')
+ax1.set_rlabel(r'White')
+ax1.taxis.set_label_position("tick1")
+ax1.laxis.set_label_position("tick1")
+ax1.raxis.set_label_position("tick1")
+ax1.tick_params(axis='both', which='major', labelsize=12)
 
 norms2 = np.linalg.norm(Z-1/d, axis=1)
 W = (Z-1/d)/norms2[:, np.newaxis]
@@ -278,24 +290,27 @@ A = np.array([[-1/np.sqrt(2), -1/np.sqrt(6)], [1/np.sqrt(2), -1/np.sqrt(6)], [0,
 B = np.matmul(W, A)
 theta = np.sign(B[:, 1])*np.arccos(B[:, 0])
 
-ax4 = fig.add_subplot(224)
-colors = ax4.scatter(-L, Y, c=theta, cmap="twilight")
-ax4.set_xlabel(r"Gini coefficient")
-ax4.set_ylabel(r"Average compensation")
-ax4.set_aspect(1)
-ax4.set_ylim(0, 0.5)
-ax4.set_xlim(0.2, 0.7)
+ax2 = fig.add_subplot(122)
+colors = ax2.scatter(L, Y, c=theta, cmap="twilight")
+ax2.set_xlabel(r"$1 - \textrm{Gini coefficient}$")
+ax2.set_ylabel(r"Average compensation")
+ax2.set_aspect(1)
+ax2.set_ylim(0, 0.5)
+ax2.set_xlim(0.3, 0.8)
 
-clb = fig.colorbar(colors, ax=[ax2, ax4], fraction=0.1)
+fig.subplots_adjust(wspace=0)
+
+
+clb = fig.colorbar(colors, ax=[ax2], fraction=0.1)
 clb.ax.set_title(r"$W$")
 clb.set_ticks([])
-clb = fig.colorbar(ScalarMappable(cmap=matplotlib.colors.ListedColormap(["white"])), ax=[ax1, ax3], fraction=0.1)
+clb = fig.colorbar(ScalarMappable(cmap=matplotlib.colors.ListedColormap(["white"])), ax=[ax1], fraction=0.1)
 clb.outline.set_visible(False)
 clb.set_ticks([])
 
 
+fig.savefig("plots/adult_confounding_comp.pdf", bbox_inches="tight")
 
-fig.savefig("plots/adult_confounding.pdf", bbox_inches="tight")
 
 print("Category 0: {}, Category 1: {}, Category 2: {}, Total: {}".format(*final_df["agg_group_comp"].value_counts().to_numpy(), final_df.shape[0]))
 
@@ -343,7 +358,7 @@ Z = df.loc[:, ["Black_comp", "Other_comp", "White_comp"]].to_numpy()
 
 d = Z.shape[1]
 norms = np.linalg.norm(Z-1/d, axis=1, ord=1)
-L = -np.apply_along_axis(lambda x: np.abs(np.subtract.outer(x, x)).sum(), 1, Z)/(2*d)
+L = 1-np.apply_along_axis(lambda x: np.abs(np.subtract.outer(x, x)).sum(), 1, Z)/(2*d)
 R = pd.get_dummies(df["race"]).to_numpy()
 X = pd.get_dummies(df[["education", "age", "sex"]]).to_numpy()
 
