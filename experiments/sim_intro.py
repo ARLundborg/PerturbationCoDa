@@ -29,7 +29,7 @@ U = np.matmul(V, np.identity(d) - np.ones((d, 1)).dot(np.ones((1,d)))/d)
 W = U/np.linalg.norm(U, axis=1, ord=1)[:, np.newaxis]
 SAD_W = np.apply_along_axis(lambda x: np.abs(np.subtract.outer(x, x)).sum(), 1, W)
 D = expit(W.dot(np.eye(1, d, 0).flatten()) + rng.normal(0, 1, n))
-L = -(d-1)/d**2*D*SAD_W
+L = 1-(d-1)/d**2*D*SAD_W
 Y = theta*L + 4*W.dot(np.eye(1, d, 0).flatten()) + rng.normal(0, 1, n)
 Z = -W*D[:, np.newaxis] + np.ones(d)/d 
 
