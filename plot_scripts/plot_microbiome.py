@@ -1059,24 +1059,40 @@ fig.savefig("plots/microbiome_cke_comparison.pdf", bbox_inches="tight")
 
 
 ### PLM comparison
-# This block produces no figure in the paper; it is only run when the
-# cross-validated microbiome results have been aggregated as well.
 
-dml_path = "experiments/clean_results/microbiome-dml.pkl"
-if os.path.exists(dml_path):
-    res_df = pd.read_pickle(dml_path)
-    res_df["variance"] = res_df["result"].apply(lambda x: x["variance"])
-    res_df["estimate"] = res_df["result"].apply(lambda x: x["estimate"])
-    res_df["standard_error"] = res_df["result"].apply(
-        lambda x: x["standard_error"]
+res_df = pd.read_pickle("experiments/clean_results/microbiome-dml_15-11-23.pkl")
+res_df["variance"] = res_df["result"].apply(lambda x: x["variance"])
+res_df["estimate"] = res_df["result"].apply(lambda x: x["estimate"])
+res_df["standard_error"] = res_df["result"].apply(lambda x: x["standard_error"])
+res_df["p_value"] = 2 * norm.cdf(
+    -np.abs(res_df["estimate"] / res_df["standard_error"])
+)
+res_df["scaled_estimate"] = (
+    np.sqrt(res_df["L_var"].astype(float)) * res_df["estimate"]
+)
+res_df["absolute_scaled_estimate"] = res_df["scaled_estimate"].abs()
+res_df["squared_scaled_estimate"] = res_df["scaled_estimate"] ** 2
+res_df["var_explained"] = res_df["squared_scaled_estimate"] / res_df["Y_var"]
+res_df["significant"] = res_df["p_value"] < 0.05
+res_df = res_df.drop(["result", "seed"], axis=1)
+
+
+print(
+    "variance explained, var(L) * estimate^2 / var(Y), by species "
+    "(Section S5.7):"
+)
+for measure, label in (("CFI_unit", "CFI_unit"), ("DML", "naive linear")):
+    var_explained = res_df.loc[
+        res_df["measure"] == measure, "var_explained"
+    ].astype(float)
+    print(
+        "   {:<13s} {:d} species, from {:.3g} to {:.3g} "
+        "(log10: {:.2f} to {:.2f})".format(
+            label,
+            var_explained.size,
+            var_explained.min(),
+            var_explained.max(),
+            np.log10(var_explained.min()),
+            np.log10(var_explained.max()),
+        )
     )
-    res_df["p_value"] = 2 * norm.cdf(
-        -np.abs(res_df["estimate"] / res_df["standard_error"])
-    )
-    res_df["scaled_estimate"] = (
-        np.sqrt(res_df["L_var"].astype(float)) * res_df["estimate"]
-    )
-    res_df["absolute_scaled_estimate"] = res_df["scaled_estimate"].abs()
-    res_df["squared_scaled_estimate"] = res_df["scaled_estimate"] ** 2
-    res_df["significant"] = res_df["p_value"] < 0.05
-    res_df = res_df.drop(["result", "seed"], axis=1)
