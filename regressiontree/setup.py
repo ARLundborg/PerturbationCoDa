@@ -18,18 +18,16 @@ compiler_directives = {
     "cdivision": True,
 }
 
+# A single setup() call: calling it twice breaks the PEP 517 wheel build, which
+# is now the default for both `pip install .` and `pip install -e .`.  The first
+# call finalizes and removes build/bdist.*/wheel, so the second fails copying its
+# extensions into a directory that no longer exists.  _tree.pyx declares
+# `# distutils: language=c++` itself, which is also what Cython recommends over
+# passing language="c++" to cythonize().
 setup(
     name='RegressionTree',
-    ext_modules=cythonize(["regressiontree/_tree.pyx"],
-                          language="c++",
-                          compiler_directives=compiler_directives,
-                          language_level=3),
-    include_dirs=[numpy.get_include()],
-)
-
-setup(
-    name='RegressionTree',
-    ext_modules=cythonize(["regressiontree/_splitter.pyx",
+    ext_modules=cythonize(["regressiontree/_tree.pyx",
+                           "regressiontree/_splitter.pyx",
                            "regressiontree/_criterion.pyx",
                            "regressiontree/_random.pyx",
                            "regressiontree/_quad_tree.pyx",
