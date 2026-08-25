@@ -34,6 +34,7 @@ d = 3 # one of [3, 15, 75]
 Y_regression = "nonparametric" # one of ["partially_linear", "nonparametric"]
 typ = "binary" # one of ["binary", "continuous"] (continuous corresponds to directional effects)
 seed = 11233 # the seed was set differently for each repetition of the experiment in the paper
+rep = 0 # index of the repetition; the paper uses 100 repetitions, i.e. rep in range(100), each with its own seed
 estimator =  "PLM" # one of ["NPM", "NPM_no_x", "NPM_oracle", "plugin", "plugin_no_x", "PLM", "PLM_no_x"]
 
 rng = np.random.RandomState(seed)
@@ -103,4 +104,4 @@ elif typ == "binary":
     elif estimator == "plugin_no_x":
         result = semi_est.average_predictive_effect_plugin_no_crossfitting(Y, L, W, Y_on_LW)
 
-pd.Series({"n": n, "d": d, "estimator": estimator, "Y_regression": Y_regression, "type": typ, "seed": seed, "result": result}).to_pickle("experiments/semiparametrics-{Y_regression}-{typ}-{d}-{n}-{estimator}.pkl".format(Y_regression=Y_regression, typ=typ, d=d, n=n, estimator=estimator))
+pd.Series({"rep": rep, "n": n, "d": d, "estimator": estimator, "Y_regression": Y_regression, "type": typ, "seed": seed, "result": result}).to_pickle("experiments/semiparametrics-{Y_regression}-{typ}-{d}-{n}-{estimator}-{rep}.pkl".format(Y_regression=Y_regression, typ=typ, d=d, n=n, estimator=estimator, rep=rep))

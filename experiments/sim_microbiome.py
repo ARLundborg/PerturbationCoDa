@@ -69,10 +69,11 @@ Z = Z_df.to_numpy()
 Y = Y_df.to_numpy()
 
 measure = "CKE" # one of ["CKE", "NP-CKE", "CFI_unit", "CFI_mult", "DML", "R2", "perm"]
-regression = "rf" # one of ["rf", "mlp", "svr", "cv"]
+regression = "rf" # one of ["rf", "mlp", "svr", "dummy", "cv"]
 
 # var_name holds the name of the target feature (this is ignored by perm that does all variables simultaneously)
-var_name = Z_df.index[0]
+# Z_df is indexed by sample ID and has one column per species, so the species names are the columns.
+var_name = Z_df.columns[0]
 j = np.argmax(Z_df.columns == var_name)
 
 seed = 11223 # in the experiments this seed was set differently for each single simulation

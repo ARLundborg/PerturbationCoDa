@@ -12,3 +12,4 @@ data/microbiome/*.csv
 *.pdf
 *.DS_Store
 *.pkl
+data/ny-schools/*.csv
