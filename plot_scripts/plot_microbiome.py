@@ -1,5 +1,3 @@
-import os
-
 import matplotlib as mpl
 import matplotlib.colors as colors
 import matplotlib.pyplot as plt
@@ -1060,7 +1058,7 @@ fig.savefig("plots/microbiome_cke_comparison.pdf", bbox_inches="tight")
 
 ### PLM comparison
 
-res_df = pd.read_pickle("experiments/clean_results/microbiome-dml_15-11-23.pkl")
+res_df = pd.read_pickle("experiments/clean_results/microbiome-dml.pkl")
 res_df["variance"] = res_df["result"].apply(lambda x: x["variance"])
 res_df["estimate"] = res_df["result"].apply(lambda x: x["estimate"])
 res_df["standard_error"] = res_df["result"].apply(lambda x: x["standard_error"])
